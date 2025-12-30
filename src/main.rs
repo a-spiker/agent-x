@@ -5,6 +5,10 @@ use views::Game;
 /// Define a views module that contains the UI for our app.
 mod views;
 
+/// Server-side functions for disk persistence
+#[cfg(feature = "server")]
+mod server;
+
 /// The Route enum is used to define the structure of internal routes in our app.
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]

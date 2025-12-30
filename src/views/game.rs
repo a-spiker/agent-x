@@ -1,27 +1,28 @@
 use dioxus::prelude::*;
+use serde::{Deserialize, Serialize};
 
 const _GAME_CSS: Asset = asset!("/assets/styling/game.css");
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 struct Player {
     name: String,
     score: i32,
     is_eliminated: bool,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 enum CardType {
     Normal,
     Imposter,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 struct GameCard {
     card_type: CardType,
     word: String,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 enum GameScreen {
     Setup,
     CardView { current_player_index: usize },
@@ -31,20 +32,82 @@ enum GameScreen {
     GameScore,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct GameState {
+    session_id: String,
+    game_screen: GameScreen,
+    players: Vec<Player>,
+    player_count_input: String,
+    player_names: Vec<String>,
+    round_number: i32,
+    cards: Vec<GameCard>,
+    imposter_index: usize,
+}
+
 /// Main Game component
 #[component]
 pub fn Game() -> Element {
-    let game_screen = use_signal(|| GameScreen::Setup);
-    let players = use_signal(|| Vec::<Player>::new());
-    let player_count_input = use_signal(|| String::from("3"));
-    let player_names = use_signal(|| Vec::<String>::new());
-    let round_number = use_signal(|| 1);
-    let cards = use_signal(|| Vec::<GameCard>::new());
-    let imposter_index = use_signal(|| 0usize);
+    // Initialize game state - load from localStorage if available
+    let mut session_id = use_signal(|| String::new());
+    let mut game_screen = use_signal(|| GameScreen::Setup);
+    let mut players = use_signal(|| Vec::<Player>::new());
+    let mut player_count_input = use_signal(|| String::from("3"));
+    let mut player_names = use_signal(|| Vec::<String>::new());
+    let mut round_number = use_signal(|| 1);
+    let mut cards = use_signal(|| Vec::<GameCard>::new());
+    let mut imposter_index = use_signal(|| 0usize);
+    let mut initialized = use_signal(|| false);
+    
+    // Initialize once on mount
+    use_effect(move || {
+        if !initialized() {
+            // Try to load existing session
+            let sid = load_session_id().unwrap_or_else(|| {
+                let id = generate_session_id();
+                save_session_id(&id);
+                id
+            });
+            
+            session_id.set(sid.clone());
+            
+            // Try to load saved game state for this session
+            if let Some(saved_state) = load_game_state(&sid) {
+                game_screen.set(saved_state.game_screen);
+                players.set(saved_state.players);
+                player_count_input.set(saved_state.player_count_input);
+                player_names.set(saved_state.player_names);
+                round_number.set(saved_state.round_number);
+                cards.set(saved_state.cards);
+                imposter_index.set(saved_state.imposter_index);
+            }
+            
+            initialized.set(true);
+        }
+    });
+    
+    // Auto-save game state whenever it changes (but only after initialization)
+    use_effect(move || {
+        if initialized() && !session_id().is_empty() {
+            let state = GameState {
+                session_id: session_id(),
+                game_screen: game_screen(),
+                players: players(),
+                player_count_input: player_count_input(),
+                player_names: player_names(),
+                round_number: round_number(),
+                cards: cards(),
+                imposter_index: imposter_index(),
+            };
+            save_game_state(&state);
+        }
+    });
     
     rsx! {
         document::Stylesheet { href: _GAME_CSS }
         div { class: "game-container",
+            div { class: "session-info",
+                p { class: "session-id", "Session: {session_id}" }
+            }
             match game_screen() {
                 GameScreen::Setup => rsx! {
                     SetupScreen {
@@ -711,4 +774,117 @@ fn generate_cards(player_count: usize) -> (Vec<GameCard>, usize) {
     
     (cards, imposter_idx)
 }
+
+// ============================================================================
+// Session Management & Persistence Functions
+// ============================================================================
+
+/// Generate a unique session ID
+fn generate_session_id() -> String {
+    use uuid::Uuid;
+    Uuid::new_v4().to_string()
+}
+
+/// Load session ID from localStorage
+fn load_session_id() -> Option<String> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        use web_sys::window;
+        
+        let window = window()?;
+        let storage = window.local_storage().ok()??;
+        storage.get_item("agent_x_session_id").ok()?
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        None
+    }
+}
+
+/// Save session ID to localStorage
+fn save_session_id(_session_id: &str) {
+    #[cfg(target_arch = "wasm32")]
+    {
+        use web_sys::window;
+        
+        if let Some(window) = window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                let _ = storage.set_item("agent_x_session_id", _session_id);
+            }
+        }
+    }
+}
+
+/// Load game state from localStorage
+fn load_game_state(session_id: &str) -> Option<GameState> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        use web_sys::window;
+        
+        let window = window()?;
+        let storage = window.local_storage().ok()??;
+        let key = format!("agent_x_game_{}", session_id);
+        let json = storage.get_item(&key).ok()??;
+        serde_json::from_str(&json).ok()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = session_id;
+        None
+    }
+}
+
+/// Save game state to localStorage and optionally to server disk
+fn save_game_state(_state: &GameState) {
+    // Save to browser localStorage
+    #[cfg(target_arch = "wasm32")]
+    {
+        use web_sys::window;
+        
+        if let Some(window) = window() {
+            if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(json) = serde_json::to_string(_state) {
+                    let key = format!("agent_x_game_{}", _state.session_id);
+                    let _ = storage.set_item(&key, &json);
+                    
+                    // Also save to server (fire and forget)
+                    // This would typically use a server function
+                    // For now, localStorage is the primary persistence mechanism
+                }
+            }
+        }
+    }
+    
+    // Note: For server-side disk persistence, you would add a server function here:
+    // #[cfg(feature = "server")]
+    // {
+    //     let json = serde_json::to_string(_state).unwrap();
+    //     let _ = crate::server::save_game_to_disk(&_state.session_id, &json);
+    // }
+}
+
+// ============================================================================
+// Server Functions (for fullstack mode with disk persistence)
+// ============================================================================
+
+// Uncomment these when running in fullstack mode with server feature
+/*
+#[server(SaveGameToDisk)]
+async fn save_game_to_disk(session_id: String, game_state: String) -> Result<(), ServerFnError> {
+    crate::server::save_game_to_disk(&session_id, &game_state)
+        .map_err(|e| ServerFnError::ServerError(e))
+}
+
+#[server(LoadGameFromDisk)]
+async fn load_game_from_disk(session_id: String) -> Result<String, ServerFnError> {
+    crate::server::load_game_from_disk(&session_id)
+        .map_err(|e| ServerFnError::ServerError(e))
+}
+
+#[server(ListSavedGames)]
+async fn list_saved_games() -> Result<Vec<String>, ServerFnError> {
+    crate::server::list_saved_games()
+        .map_err(|e| ServerFnError::ServerError(e))
+}
+*/
 
