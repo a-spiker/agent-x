@@ -105,12 +105,14 @@ body {
     text-align: center;
     background: white;
     color: #333;
+    appearance: none;
     -webkit-appearance: none;
     -moz-appearance: textfield;
 }
 
 .player-count-section input::-webkit-inner-spin-button,
 .player-count-section input::-webkit-outer-spin-button {
+    appearance: none;
     -webkit-appearance: none;
     margin: 0;
 }
