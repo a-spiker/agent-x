@@ -45,17 +45,49 @@ This allows all players to use the same device or different devices on the netwo
 ## 📱 How to Play
 
 1. **Setup**: Enter the number of players (3+) and their names
-2. **Card View**: Each player reveals their card privately (pass the device around)
-3. **Discussion**: Players discuss to find who has the odd word
-4. **Voting**: Vote for who you think is the imposter
-5. **Scoring**: 
-   - If imposter found: Regular players get 10 points each
+2. **Category Selection**: Players choose a category for the round (e.g., "Food & Drinks 🍕", "Animals 🦁", etc.)
+3. **Category Reveal**: Everyone sees the chosen category
+4. **Card View**: Each player reveals their card privately (pass the device around)
+5. **Discussion**: Players discuss to find who has the odd word
+6. **Voting**: Group decides who to eliminate
+7. **Scoring**: 
+   - If imposter found: Civilians get 10 points each
    - If imposter not found: Imposter gets 20 points
+
+## 📝 Word Categories
+
+The game includes **20 categories** with over **400+ challenging word pairs**:
+
+- 🍕 Food & Drinks (30 pairs)
+- 🦁 Animals (30 pairs)
+- 🌳 Nature (44 pairs)
+- ⛅ Seasons & Weather (15 pairs)
+- 🎵 Music & Arts (16 pairs)
+- ⚽ Sports & Activities (18 pairs)
+- 💻 Technology (22 pairs)
+- 🚗 Transportation (19 pairs)
+- 🎬 Entertainment (14 pairs)
+- 🎥 Movies & Cinema (22 pairs) ✨ NEW
+- 🏛️ Places (30 pairs)
+- 👨‍⚕️ Professions (20 pairs)
+- 👕 Clothing & Accessories (28 pairs)
+- ✏️ Stationery & Office (16 pairs)
+- 💎 Precious Items (14 pairs)
+- 💡 Light Sources (8 pairs)
+- ⚔️ Fantasy & Adventure (28 pairs)
+- 👻 Mystical (15 pairs)
+- 📖 Stories & Tales (14 pairs)
+- 🚀 Science Fiction (18 pairs)
+
+**✨ Word pairs are carefully crafted to be challenging!** Similar words make it harder to identify the imposter, creating more engaging discussions.
+
+**Want to customize?** Edit the `words.yaml` file in the project root to add your own categories and word pairs!
 
 ## 📂 Project Structure
 
 ```
 agent-x/
+├─ words.yaml          # Word categories and pairs (easily editable!)
 ├─ assets/
 │  ├─ favicon.ico
 │  └─ styling/
@@ -64,13 +96,30 @@ agent-x/
 │  ├─ main.rs          # App entry point and routing
 │  └─ views/
 │     ├─ mod.rs        # Views module
-│     └─ game.rs       # Game logic and components
+│     └─ game/         # Game module (refactored)
+│        ├─ mod.rs     # Main game orchestration
+│        ├─ types.rs   # Data structures
+│        ├─ utils.rs   # Helper functions (word loading)
+│        ├─ persistence.rs  # Session management
+│        └─ components/     # UI components
+│           ├─ mod.rs
+│           ├─ setup.rs
+│           ├─ category_selection.rs
+│           ├─ category_reveal.rs
+│           ├─ card_view.rs
+│           ├─ voting.rs
+│           ├─ elimination.rs
+│           ├─ round_end.rs
+│           └─ score.rs
 └─ Cargo.toml
 ```
 
 ## 🎨 Features
 
 - Beautiful gradient UI with smooth animations
+- **🎯 Player-selected categories** - Choose your theme before each round
+- **📝 Category-based word system** - Words organized by themes
+- **🔧 Easily extensible** - Edit `words.yaml` to add custom categories
 - Mobile-optimized responsive design
 - Privacy-focused card reveal system
 - Score tracking across multiple rounds
@@ -106,9 +155,10 @@ Agent-X features automatic game state persistence that allows you to resume your
 - ✅ All game progress
 
 **Session ID:**
-- Each game session gets a unique UUID (visible in top-right corner)
-- Format: `Session: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
-- Session ID is persistent across browser restarts
+- Each game session gets a unique UUID stored in localStorage
+- Session ID persists across browser restarts
+- Session ID is used internally to save/load game state
+- Not displayed on screen to keep UI clean
 
 ### 🔄 Resume Game
 
@@ -118,10 +168,9 @@ Agent-X features automatic game state persistence that allows you to resume your
 3. Continue playing from exactly where you left off
 
 **Multiple Devices (Same Network):**
-1. Note the Session ID from the top-right corner
-2. Open the game on another device: `http://YOUR_IP:8080`
-3. The same session will be loaded automatically
-4. Both devices share the same game state via localStorage
+1. Game state is saved to each device's localStorage independently
+2. To share a game session, you would need to export/import the session manually
+3. For true cross-device sync, enable server mode (see below)
 
 ### 🗑️ Start Fresh Game
 
@@ -198,9 +247,9 @@ dx serve --features server
 ### 💡 Best Practices
 
 1. **Regular Play:** Just play normally - saving is automatic
-2. **Share Session:** Copy Session ID for friends to join/view
-3. **New Session:** Always use "New Game" button for clean state
-4. **Browser Compatibility:** Ensure localStorage is enabled (default in all modern browsers)
+2. **New Session:** Always use "New Game" button for clean state
+3. **Browser Compatibility:** Ensure localStorage is enabled (default in all modern browsers)
+4. **Privacy:** All data stays in your browser, nothing is sent to external servers
 
 ## 📄 License
 
