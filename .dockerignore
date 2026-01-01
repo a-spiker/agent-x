@@ -1,0 +1,35 @@
+# Rust build artifacts
+target/
+dist/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# CI/CD
+.github/
+
+# Logs
+*.log
+
+# Test files
+tests/
+
+# Environment files
+.env
+.env.local
+

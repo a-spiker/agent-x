@@ -251,6 +251,154 @@ dx serve --features server
 3. **Browser Compatibility:** Ensure localStorage is enabled (default in all modern browsers)
 4. **Privacy:** All data stays in your browser, nothing is sent to external servers
 
+---
+
+## 🐳 Docker Deployment
+
+Deploy Agent-X using Docker for easy hosting and portability.
+
+### Quick Start
+
+**Build the Docker image:**
+```bash
+docker build -t agent-x .
+```
+
+**Run the container:**
+```bash
+docker run -d -p 8080:80 --name agent-x-app agent-x
+```
+
+The app will be available at `http://localhost:8080`
+
+### Docker Commands
+
+**Build the image:**
+```bash
+docker build -t agent-x:latest .
+```
+
+**Run in background:**
+```bash
+docker run -d -p 8080:80 --name agent-x-app agent-x:latest
+```
+
+**Run with custom port:**
+```bash
+docker run -d -p 3000:80 --name agent-x-app agent-x:latest
+```
+
+**View logs:**
+```bash
+docker logs agent-x-app
+```
+
+**Stop the container:**
+```bash
+docker stop agent-x-app
+```
+
+**Remove the container:**
+```bash
+docker rm agent-x-app
+```
+
+**Rebuild after changes:**
+```bash
+docker stop agent-x-app
+docker rm agent-x-app
+docker build -t agent-x:latest .
+docker run -d -p 8080:80 --name agent-x-app agent-x:latest
+```
+
+### Docker Compose (Optional)
+
+Create a `docker-compose.yml` file:
+
+```yaml
+version: '3.8'
+
+services:
+  agent-x:
+    build: .
+    container_name: agent-x-app
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+```
+
+**Run with Docker Compose:**
+```bash
+docker-compose up -d
+```
+
+**Stop with Docker Compose:**
+```bash
+docker-compose down
+```
+
+### Production Deployment
+
+For production deployment on cloud platforms:
+
+**Deploy to DigitalOcean, AWS, or any VPS:**
+1. SSH into your server
+2. Install Docker: `curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh`
+3. Clone your repository: `git clone https://github.com/yourusername/agent-x.git`
+4. Build and run: `cd agent-x && docker build -t agent-x . && docker run -d -p 80:80 agent-x`
+
+**Deploy to Fly.io:**
+```bash
+# Install Fly CLI
+curl -L https://fly.io/install.sh | sh
+
+# Login to Fly
+fly auth login
+
+# Launch app (first time)
+fly launch
+
+# Deploy updates
+fly deploy
+```
+
+**Deploy to Railway:**
+1. Connect your GitHub repository to Railway
+2. Railway will auto-detect the Dockerfile
+3. Deploy automatically on git push
+
+### Dockerfile Architecture
+
+The Dockerfile uses a **multi-stage build** for optimal size and performance:
+
+1. **Builder Stage:** Uses Rust image to compile the Dioxus app
+2. **Production Stage:** Uses nginx:alpine to serve static files (only ~50MB!)
+
+**Benefits:**
+- ✅ Small final image (~50MB vs ~2GB)
+- ✅ Fast startup and low resource usage
+- ✅ Production-ready nginx configuration
+- ✅ Gzip compression enabled
+- ✅ Health checks included
+- ✅ Optimized for web serving
+
+### Customizing nginx
+
+To customize the nginx configuration, create an `nginx.conf` file and modify the Dockerfile:
+
+```dockerfile
+# Add this line before the EXPOSE command
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+```
+
+---
+
 ## 📄 License
 
 MIT License

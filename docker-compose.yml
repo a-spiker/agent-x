@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  agent-x:
+    build: .
+    container_name: agent-x-app
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    labels:
+      - "com.agent-x.description=Agent-X Social Deduction Game"
+      - "com.agent-x.version=1.0"
+
