@@ -43,6 +43,9 @@ pub struct GameState {
     pub imposter_index: usize,
     pub current_category: Option<(String, String)>, // (name, icon)
     pub selected_category_index: Option<usize>, // Selected category index for the round
+    pub hide_imposter_identity: bool, // Toggle to hide imposter from themselves
+    pub current_round_words: Option<(String, String)>, // (civilian_word, imposter_word)
+    pub starting_player_index: usize, // Rotates each round to determine who picks card first
 }
 
 // Word list structures

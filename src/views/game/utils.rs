@@ -3,6 +3,18 @@ use crate::views::game::types::{GameCard, CardType, WordList, WordCategory};
 // Include the YAML file at compile time
 const WORDS_YAML: &str = include_str!("../../../words.yaml");
 
+/// Generate a random starting index using getrandom
+/// Used for randomizing which player goes first
+pub fn get_random_starting_index(max: usize) -> usize {
+    if max == 0 {
+        return 0;
+    }
+    let mut buf = [0u8; 4];
+    getrandom::getrandom(&mut buf).unwrap_or_default();
+    let num = u32::from_le_bytes(buf);
+    (num as usize) % max
+}
+
 /// Load word categories from YAML
 fn load_word_categories() -> WordList {
     serde_yaml::from_str(WORDS_YAML).expect("Failed to parse words.yaml")

@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 use crate::views::game::types::*;
+use crate::views::game::utils::get_random_starting_index;
 
 /// Screen showing round results
 #[component]
@@ -11,6 +12,8 @@ pub fn RoundEndScreen(
     mut round_number: Signal<i32>,
     mut cards: Signal<Vec<GameCard>>,
     mut imposter_index: Signal<usize>,
+    current_round_words: Signal<Option<(String, String)>>,
+    mut starting_player_index: Signal<usize>,
 ) -> Element {
     let player_list = players();
     let imposter_name = &player_list[imposter_index()].name;
@@ -32,6 +35,11 @@ pub fn RoundEndScreen(
                                     cards.set(Vec::new());
                                     imposter_index.set(0);
                                     round_number.set(1);
+                                    
+                                    // Randomize starting player for new game
+                                    let player_count = players().len();
+                                    starting_player_index.set(get_random_starting_index(player_count));
+                                    
                                     show_confirmation.set(false);
                                     game_screen.set(GameScreen::Setup);
                                 },
@@ -62,6 +70,23 @@ pub fn RoundEndScreen(
                     "The imposter was: {imposter_name}"
                 }
                 
+                // Display the words that were used this round
+                if let Some((civilian_word, imposter_word)) = current_round_words() {
+                    div { class: "words-reveal",
+                        h3 { "📝 Words This Round:" }
+                        div { class: "word-display",
+                            div { class: "word-item civilian-word-display",
+                                span { class: "word-label", "👥 Civilian Word:" }
+                                span { class: "word-value", "{civilian_word}" }
+                            }
+                            div { class: "word-item imposter-word-display",
+                                span { class: "word-label", "🎭 Imposter Word:" }
+                                span { class: "word-value", "{imposter_word}" }
+                            }
+                        }
+                    }
+                }
+                
                 if imposter_found {
                     p { class: "result-message",
                         "🎉 All civilians get 10 points!"
@@ -85,6 +110,13 @@ pub fn RoundEndScreen(
                         players.set(updated_players);
                         cards.set(Vec::new());
                         round_number.set(round_number() + 1);
+                        
+                        // Rotate starting player for next round
+                        let player_count = players().len();
+                        if player_count > 0 {
+                            starting_player_index.set((starting_player_index() + 1) % player_count);
+                        }
+                        
                         game_screen.set(GameScreen::CategorySelection);
                     },
                     "▶️ Next Round"

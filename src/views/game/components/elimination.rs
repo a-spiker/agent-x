@@ -18,14 +18,32 @@ pub fn EliminationScreen(
     
     rsx! {
         div { class: "elimination-screen",
-            h1 { "🗳️ Player Eliminated" }
-            
-            div { class: "elimination-result",
-                p { class: "eliminated-player",
-                    "{eliminated_player.name} has been evicted!"
+            // Show different emoji and message based on who was evicted
+            if was_imposter {
+                h1 { class: "imposter-found", "🎉 Imposter Evicted!" }
+                div { class: "elimination-result celebration",
+                    p { class: "eliminated-player success",
+                        "🎊 {eliminated_player.name} was the IMPOSTER!"
+                    }
+                    p { class: "result-message",
+                        "🏆 Civilians win this round!"
+                    }
+                    p { class: "players-remaining",
+                        "All civilians receive +10 points"
+                    }
                 }
-                p { class: "players-remaining",
-                    "{active_count - 1} players remaining"
+            } else {
+                h1 { class: "civilian-evicted", "😔 Civilian Evicted" }
+                div { class: "elimination-result disappointment",
+                    p { class: "eliminated-player failure",
+                        "💔 {eliminated_player.name} was a CIVILIAN"
+                    }
+                    p { class: "result-message",
+                        "😈 The imposter remains among you..."
+                    }
+                    p { class: "players-remaining",
+                        "{active_count - 1} players remaining"
+                    }
                 }
             }
             

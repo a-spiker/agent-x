@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 use crate::views::game::types::{Player, GameScreen};
+use crate::views::game::utils::get_random_starting_index;
 
 #[component]
 pub fn SetupScreen(
@@ -8,6 +9,7 @@ pub fn SetupScreen(
     mut players: Signal<Vec<Player>>,
     mut game_screen: Signal<GameScreen>,
     mut round_number: Signal<i32>,
+    mut starting_player_index: Signal<usize>,
 ) -> Element {
     let player_count = player_count_input().parse::<usize>().unwrap_or(3).max(3).min(10);
     
@@ -80,8 +82,12 @@ pub fn SetupScreen(
                             score: 0,
                             is_eliminated: false,
                         }).collect();
-                        players.set(new_players);
+                        players.set(new_players.clone());
                         round_number.set(1);
+                        
+                        // Randomize starting player for new game
+                        starting_player_index.set(get_random_starting_index(new_players.len()));
+                        
                         game_screen.set(GameScreen::CategorySelection);
                     }
                 },

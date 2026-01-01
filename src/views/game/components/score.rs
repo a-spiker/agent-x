@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 use crate::views::game::types::*;
+use crate::views::game::utils::get_random_starting_index;
 
 /// Screen showing all player scores
 #[component]
@@ -9,6 +10,7 @@ pub fn GameScoreScreen(
     mut game_screen: Signal<GameScreen>,
     mut cards: Signal<Vec<GameCard>>,
     mut imposter_index: Signal<usize>,
+    mut starting_player_index: Signal<usize>,
 ) -> Element {
     let mut sorted_players = players();
     sorted_players.sort_by(|a, b| b.score.cmp(&a.score));
@@ -29,6 +31,11 @@ pub fn GameScoreScreen(
                                     // Clear all game state for a completely fresh start
                                     cards.set(Vec::new());
                                     imposter_index.set(0);
+                                    
+                                    // Randomize starting player for new game
+                                    let player_count = players().len();
+                                    starting_player_index.set(get_random_starting_index(player_count));
+                                    
                                     show_confirmation.set(false);
                                     game_screen.set(GameScreen::Setup);
                                 },
@@ -77,6 +84,13 @@ pub fn GameScoreScreen(
                         players.set(updated_players);
                         cards.set(Vec::new());
                         round_number.set(round_number() + 1);
+                        
+                        // Rotate starting player for next round
+                        let player_count = players().len();
+                        if player_count > 0 {
+                            starting_player_index.set((starting_player_index() + 1) % player_count);
+                        }
+                        
                         game_screen.set(GameScreen::CategorySelection);
                     },
                     "Play Next Round"

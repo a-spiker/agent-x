@@ -28,6 +28,9 @@ pub fn Game() -> Element {
     let mut imposter_index = use_signal(|| 0usize);
     let mut current_category = use_signal(|| None::<(String, String)>);
     let mut selected_category_index = use_signal(|| None::<usize>);
+    let mut hide_imposter_identity = use_signal(|| false);
+    let mut current_round_words = use_signal(|| None::<(String, String)>);
+    let mut starting_player_index = use_signal(|| 0usize);
     let mut initialized = use_signal(|| false);
     
     // Initialize once on mount
@@ -53,6 +56,9 @@ pub fn Game() -> Element {
                 imposter_index.set(saved_state.imposter_index);
                 current_category.set(saved_state.current_category);
                 selected_category_index.set(saved_state.selected_category_index);
+                hide_imposter_identity.set(saved_state.hide_imposter_identity);
+                current_round_words.set(saved_state.current_round_words);
+                starting_player_index.set(saved_state.starting_player_index);
             }
             
             initialized.set(true);
@@ -73,6 +79,9 @@ pub fn Game() -> Element {
                 imposter_index: imposter_index(),
                 current_category: current_category(),
                 selected_category_index: selected_category_index(),
+                hide_imposter_identity: hide_imposter_identity(),
+                current_round_words: current_round_words(),
+                starting_player_index: starting_player_index(),
             };
             save_game_state(&state);
         }
@@ -89,6 +98,7 @@ pub fn Game() -> Element {
                         players,
                         game_screen,
                         round_number,
+                        starting_player_index,
                     }
                 },
                 GameScreen::CategorySelection => rsx! {
@@ -102,6 +112,7 @@ pub fn Game() -> Element {
                         category_name,
                         category_icon,
                         game_screen,
+                        hide_imposter_identity,
                     }
                 },
                 GameScreen::CardView { current_player_index } => rsx! {
@@ -113,6 +124,9 @@ pub fn Game() -> Element {
                         game_screen,
                         current_category,
                         selected_category_index,
+                        hide_imposter_identity,
+                        current_round_words,
+                        starting_player_index,
                     }
                 },
                 GameScreen::Voting => rsx! {
@@ -120,6 +134,9 @@ pub fn Game() -> Element {
                         players,
                         game_screen,
                         imposter_index,
+                        cards,
+                        current_category,
+                        starting_player_index,
                     }
                 },
                 GameScreen::Elimination { eliminated_index, was_imposter } => rsx! {
@@ -142,6 +159,8 @@ pub fn Game() -> Element {
                         round_number,
                         cards,
                         imposter_index,
+                        current_round_words,
+                        starting_player_index,
                     }
                 },
                 GameScreen::GameScore => rsx! {
@@ -151,6 +170,7 @@ pub fn Game() -> Element {
                         game_screen,
                         cards,
                         imposter_index,
+                        starting_player_index,
                     }
                 },
             }
