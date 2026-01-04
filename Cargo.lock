@@ -5301,6 +5301,7 @@ version = "0.1.0"
 dependencies = [
  "dioxus",
  "getrandom 0.2.16",
+ "once_cell",
  "serde",
  "serde_json",
  "serde_yaml",

@@ -1,4 +1,7 @@
 use crate::views::game::types::{GameCard, CardType, WordList, WordCategory};
+use once_cell::sync::Lazy;
+use std::collections::HashMap;
+use std::sync::Mutex;
 
 // Include the YAML file at compile time
 const WORDS_YAML: &str = include_str!("../../../words.yaml");
@@ -46,7 +49,25 @@ pub fn generate_cards_for_category(player_count: usize, category_index: usize) -
     
     // Select random word pair from the chosen category
     let pair_index = (random_word as usize) % category.pairs.len();
-    let (normal_word, imposter_word) = &category.pairs[pair_index];
+
+    // Track orientation per pair so repeats swap roles each time
+    static PAIR_ORIENTATION: Lazy<Mutex<HashMap<(usize, usize), bool>>> = Lazy::new(|| Mutex::new(HashMap::new()));
+    let mut orientations = PAIR_ORIENTATION.lock().unwrap_or_else(|e| e.into_inner());
+    let flip = orientations
+        .entry((category_index, pair_index))
+        .or_insert_with(|| {
+            // Initial orientation randomized
+            (random_word & 1) == 1
+        });
+    let flip_val = *flip;
+    // Invert for next time this pair is used
+    *flip = !*flip;
+
+    let (normal_word, imposter_word) = if flip_val {
+        (&category.pairs[pair_index].0, &category.pairs[pair_index].1)
+    } else {
+        (&category.pairs[pair_index].1, &category.pairs[pair_index].0)
+    };
     
     // Select random imposter index (using separate random value)
     let imposter_idx = (random_imposter as usize) % player_count;
